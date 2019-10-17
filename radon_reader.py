@@ -7,20 +7,31 @@ __author__ = "Carlos Andre"
 __email__ = "candrecn at hotmail dot com"
 __date__ = "2019-09-13"
 
-import argparse, struct, time, re, json
+import argparse
+import struct
+import time
+import re
+import json
 import paho.mqtt.client as mqtt
 
 from bluepy import btle
+from bluepy.btle import Scanner, DefaultDelegate
+
 from time import sleep
 from random import randint
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description=__progname__)
+parser.add_argument('-s',
+                    '--scan',
+                    action='store_true',
+                    help='Scan for bluetooth devices',
+                    required=False)
 parser.add_argument('-a',
                     dest='address',
                     help='Bluetooth Address (AA:BB:CC:DD:EE:FF format)',
-                    required=True)
+                    required=False)
 parser.add_argument('-b',
                     '--becquerel',
                     action='store_true',
@@ -151,8 +162,17 @@ def GetRadonValue():
 
 
 try:
-    GetRadonValue()
+    if args.scan:
+        scanner = Scanner().withDelegate(ScanDelegate())
+        devices = scanner.scan(10.0)
 
+        for dev in devices:
+            print("Device %s (%s), RSSI=%d dB" % (dev.addr, dev.addrType, dev.rssi) )
+            for (adtype, desc, value) in dev.getScanData():
+                print("  %s = %s" % (desc, value) )
+        #
+    else:
+        GetRadonValue()
 except Exception as e:
     if args.verbose and not args.silent:
         print(e)
@@ -169,3 +189,16 @@ except Exception as e:
             else:
                 print(f"Failed: {e}")
         break
+
+
+class ScanDelegate(DefaultDelegate):
+    def __init__(self):
+        DefaultDelegate.__init__(self)
+
+    def handleDiscovery(self, dev, isNewDev, isNewData):
+        if isNewDev:
+            print("Discovered device", dev.addr)
+        elif isNewData:
+            print( "Received new data from", dev.addr)
+
+
