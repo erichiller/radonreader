@@ -195,8 +195,7 @@ except Exception as e:
             sleep(5)
             GetRadonValue()
         except Exception as e:
+            print(f"Attemp {i} Failed with error: {e}")
             if i < 3:
                 continue
-            else:
-                print(f"Failed: {e}")
         break
