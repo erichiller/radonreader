@@ -82,7 +82,7 @@ args.address = args.address.upper()
 
 if not re.match("^([0-9A-F]{2}:){5}[0-9A-F]{2}$", args.address) or (
         args.mqtt and
-    (args.mqtt_srv == None or args.mqtt_user == None or args.mqtt_pw == None)):
+        (args.mqtt_srv == None or args.mqtt_user == None or args.mqtt_pw == None)):
     parser.print_help()
     quit()
 
@@ -161,6 +161,17 @@ def GetRadonValue():
         clientMQTT.disconnect()
 
 
+class ScanDelegate(DefaultDelegate):
+    def __init__(self):
+        DefaultDelegate.__init__(self)
+
+    def handleDiscovery(self, dev, isNewDev, isNewData):
+        if isNewDev:
+            print("Discovered device", dev.addr)
+        elif isNewData:
+            print("Received new data from", dev.addr)
+
+
 try:
     if args.scan:
         scanner = Scanner().withDelegate(ScanDelegate())
@@ -189,16 +200,3 @@ except Exception as e:
             else:
                 print(f"Failed: {e}")
         break
-
-
-class ScanDelegate(DefaultDelegate):
-    def __init__(self):
-        DefaultDelegate.__init__(self)
-
-    def handleDiscovery(self, dev, isNewDev, isNewData):
-        if isNewDev:
-            print("Discovered device", dev.addr)
-        elif isNewData:
-            print( "Received new data from", dev.addr)
-
-
