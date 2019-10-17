@@ -43,7 +43,6 @@ parser.add_argument('-v',
                     help='Verbose mode',
                     required=False)
 parser.add_argument(
-    '-s',
     '--silent',
     action='store_true',
     help='Only output radon value (without unit and timestamp)',
@@ -78,13 +77,15 @@ parser.add_argument(
     required=False)
 args = parser.parse_args()
 
-args.address = args.address.upper()
 
-if not re.match("^([0-9A-F]{2}:){5}[0-9A-F]{2}$", args.address) or (
-        args.mqtt and
-        (args.mqtt_srv == None or args.mqtt_user == None or args.mqtt_pw == None)):
-    parser.print_help()
-    quit()
+if args.address:
+    args.address = args.address.upper()
+
+    if not re.match("^([0-9A-F]{2}:){5}[0-9A-F]{2}$", args.address) or (
+            args.mqtt and
+            (args.mqtt_srv == None or args.mqtt_user == None or args.mqtt_pw == None)):
+        parser.print_help()
+        quit()
 
 
 def GetRadonValue():
