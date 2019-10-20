@@ -12,6 +12,7 @@ import struct
 import time
 import re
 import json
+from pprint import pprint
 import paho.mqtt.client as mqtt
 
 from bluepy import btle
@@ -91,23 +92,43 @@ if args.address:
 def GetRadonValue():
     if args.verbose and not args.silent:
         print("Connecting...")
-    DevBT = btle.Peripheral(args.address, "random")
+    DevBT = btle.Peripheral(args.address, btle.ADDR_TYPE_RANDOM)
     RadonEye = btle.UUID("00001523-1212-efde-1523-785feabcd123")
+    if args.verbose and not args.silent:
+        print("DEBUG: DevBT.getServices()")
+        pprint(DevBT.getServices())
     RadonEyeService = DevBT.getServiceByUUID(RadonEye)
+    if args.verbose and not args.silent:
+        print("DEBUG: RadonEyeService")
+        pprint(RadonEyeService)
+        for c in RadonEyeService.getCharacteristics():
+            pprint(c.uuid.getCommonName())
+            pprint(c.read())
 
     # Write 0x50 to 00001524-1212-efde-1523-785feabcd123
     if args.verbose and not args.silent:
         print("Writing...")
     uuidWrite = btle.UUID("00001524-1212-efde-1523-785feabcd123")
     RadonEyeWrite = RadonEyeService.getCharacteristics(uuidWrite)[0]
-    RadonEyeWrite.write(bytes("\x50"))
+    if args.verbose and not args.silent:
+        print("DEBUG: RadonEyeWrite")
+        pprint(RadonEyeWrite)
+        pprint(RadonEyeWrite.uuid.getCommonName())
+        pprint(RadonEyeWrite.read())
+    RadonEyeWrite.write(bytes(80))
 
     # Read from 3rd to 6th byte of 00001525-1212-efde-1523-785feabcd123
     if args.verbose and not args.silent:
         print("Reading...")
     uuidRead = btle.UUID("00001525-1212-efde-1523-785feabcd123")
     RadonEyeValue = RadonEyeService.getCharacteristics(uuidRead)[0]
+    if args.verbose and not args.silent:
+        print("DEBUG: RadonEyeValue")
+        pprint(RadonEyeValue)
     RadonValue = RadonEyeValue.read()
+    if args.verbose and not args.silent:
+        print("DEBUG: RadonValue")
+        pprint(RadonValue)
     RadonValue = struct.unpack('<f', RadonValue[2:6])[0]
 
     DevBT.disconnect()
@@ -190,9 +211,11 @@ except Exception as e:
         print(e)
 
     for i in range(1, 4):
+        if args.verbose and not args.silent:
+            print(f"\nAttempt #{i}")
         try:
-            if args.verbose and not args.silent:
-                print("Failed, trying again (%s)..." % i)
+            if args.verbose and not args.silent and i > 1:
+                print("trying again (%s)..." % i)
             sleep(5)
             GetRadonValue()
         except Exception as e:
